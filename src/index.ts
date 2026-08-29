@@ -1,12 +1,12 @@
 /**
- * @web2md/core — HTML → clean, LLM-ready Markdown.
+ * web2md-core — HTML → clean, LLM-ready Markdown.
  *
  * This is the extraction and conversion engine that powers Web2MD. It is a
  * pure library: give it an HTML string, get Markdown back. No network calls,
  * no API keys, no account required — nothing here talks to a server.
  *
  * ```ts
- * import { convertToMarkdown } from '@web2md/core'
+ * import { convertToMarkdown } from 'web2md-core'
  *
  * const { markdown, metadata } = convertToMarkdown(html, 'https://example.com/post')
  * console.log(markdown)

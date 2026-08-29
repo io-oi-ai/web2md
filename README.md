@@ -1,4 +1,4 @@
-# @web2md/core
+# web2md-core
 
 Turn messy HTML into clean, LLM-ready Markdown.
 
@@ -7,7 +7,7 @@ It is a pure library — give it an HTML string, get Markdown back. No network
 calls, no API key, no account. Nothing in this package talks to a server.
 
 ```bash
-npm install @web2md/core
+npm install web2md-core
 ```
 
 ## Why convert at all
@@ -19,7 +19,7 @@ a document it can actually follow.
 The library reports both numbers so you can see the difference:
 
 ```ts
-import { convertToMarkdown } from '@web2md/core'
+import { convertToMarkdown } from 'web2md-core'
 
 const result = convertToMarkdown(html, { url: 'https://example.com/post' })
 

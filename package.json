@@ -1,5 +1,5 @@
 {
-  "name": "@web2md/core",
+  "name": "web2md-core",
   "version": "0.1.0",
   "description": "Turn messy HTML into clean, LLM-ready Markdown. The extraction and conversion engine behind Web2MD.",
   "license": "MIT",
@@ -62,8 +62,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Public types for @web2md/core.
+ * Public types for web2md-core.
  *
  * Deliberately minimal: only what the converter surface needs. Plan limits,
  * quota rules, and anything else product-specific stay in the closed-source
