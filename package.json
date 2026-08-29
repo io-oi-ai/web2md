@@ -1,0 +1,69 @@
+{
+  "name": "@web2md/core",
+  "version": "0.1.0",
+  "description": "Turn messy HTML into clean, LLM-ready Markdown. The extraction and conversion engine behind Web2MD.",
+  "license": "MIT",
+  "author": "Web2MD <support@web2md.org>",
+  "homepage": "https://web2md.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/io-oi-ai/web2md.git"
+  },
+  "bugs": {
+    "url": "https://github.com/io-oi-ai/web2md/issues"
+  },
+  "keywords": [
+    "markdown",
+    "html-to-markdown",
+    "web-to-markdown",
+    "content-extraction",
+    "readability",
+    "llm",
+    "rag",
+    "turndown",
+    "token-optimization"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dompurify": "^3.3.3",
+    "highlight.js": "^11.11.1",
+    "linkedom": "^0.16.8",
+    "marked": "^17.0.3",
+    "turndown": "^7.1.3",
+    "katex": "^0.16.11"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.30",
+    "@types/turndown": "^5.0.5",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
