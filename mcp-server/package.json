@@ -1,0 +1,54 @@
+{
+  "name": "web2md-mcp-server",
+  "version": "0.12.2",
+  "mcpName": "org.web2md/web2md",
+  "description": "MCP Server for Web2MD — convert URLs to Markdown from Claude Desktop, Cursor, etc.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "bin": {
+    "web2md-mcp": "dist/index.js",
+    "web2md-agent-host": "dist/native-host.js",
+    "web2md-mcp-server-install": "dist/install.js",
+    "web2md-mcp-setup": "dist/setup.js"
+  },
+  "keywords": [
+    "mcp",
+    "markdown",
+    "web2md",
+    "claude",
+    "cursor",
+    "ai",
+    "web-scraping",
+    "chrome-extension"
+  ],
+  "author": "Web2MD <support@web2md.org>",
+  "license": "MIT",
+  "homepage": "https://web2md.org/docs/advanced/mcp-server",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/io-oi-ai/web2md.git",
+    "directory": "mcp-server"
+  },
+  "files": [
+    "dist",
+    "install.sh",
+    "install.bat",
+    "native-host-manifest.json",
+    "README.md",
+    "Dockerfile"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.22.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "com.web2md.agent",
+  "description": "Web2MD Agent Bridge — allows AI agents to control the Web2MD Chrome extension",
+  "path": "HOST_PATH_PLACEHOLDER",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://EXTENSION_ID_PLACEHOLDER/"
+  ]
+}
