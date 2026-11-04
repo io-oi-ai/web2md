@@ -124,9 +124,13 @@ function claudeDesktopConfigPath(): string {
 async function main() {
   console.log('web2md-mcp-setup — connecting all your Agents…\n')
 
-  const apiKey = readApiKey()
+  let apiKey = readApiKey()
   if (!apiKey) {
-    fail('No API key found. Run `npx web2md-cli login` first (it opens your browser and signs you in).')
+    // 无凭证 → 直接发起 OAuth 浏览器登录(2026-09-05),一条命令彻底自包含,
+    // 不再要求先跑 web2md-cli login。
+    console.log('No credentials found — signing you in via browser…')
+    const { oauthLogin } = await import('./oauth.js')
+    apiKey = await oauthLogin((m) => console.log(m))
   }
 
   // 1) native host(本地 Agent 桥,扩展端状态灯的那条链路)

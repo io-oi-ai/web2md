@@ -1,4 +1,58 @@
-# web2md-core
+# Web2MD — open source
+
+Two packages live here, both MIT:
+
+| Package | What it is | Install |
+| --- | --- | --- |
+| [`web2md-core`](#web2md-core) | The HTML → Markdown engine. Pure library, no network. | `npm install web2md-core` |
+| [`web2md-mcp-server`](#web2md-mcp-server) | MCP server so Claude Code, Cursor, and other agents can convert pages. | `npx web2md-mcp-server` |
+
+Both are extracted from [Web2MD](https://web2md.org), a Chrome extension that
+converts web pages to Markdown for AI tools.
+
+---
+
+## web2md-mcp-server
+
+An [MCP](https://modelcontextprotocol.io) server exposing 12 tools to any MCP
+client — Claude Code, Claude Desktop, Cursor, Cline, and others.
+
+```bash
+npx -p web2md-mcp-server web2md-mcp-setup
+```
+
+That writes the config for your client and, if a tool needs an account, opens
+the browser for OAuth — no password is typed anywhere.
+
+Or configure it by hand (the binary is `web2md-mcp`):
+
+```json
+{
+  "mcpServers": {
+    "web2md": { "command": "npx", "args": ["-y", "-p", "web2md-mcp-server", "web2md-mcp"] }
+  }
+}
+```
+
+**Tools:** `convert_url`, `convert_file`, `semantic_search`, `get_conversion`,
+`bridge_convert_url`, `agent_convert`, `agent_batch_convert`, `list_skills`,
+`get_skill`, `search_library`, `get_library_items`, `sync_library`.
+
+Two of these are worth calling out:
+
+- **`bridge_convert_url`** connects to your own signed-in Chrome session, so an
+  agent can read pages that need a login or run heavy JavaScript — the ones a
+  server-side fetch gets a login wall or an empty shell for.
+- **`agent_batch_convert`** takes up to 50 URLs in one call and returns Markdown
+  plus token counts for each.
+
+`convert_url` works without an account. Tools that touch your library or the
+hosted API need a free key — the setup command above handles that, or set
+`WEB2MD_API_KEY` yourself.
+
+---
+
+## web2md-core
 
 Turn messy HTML into clean, LLM-ready Markdown.
 

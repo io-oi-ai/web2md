@@ -22,16 +22,28 @@ function readConfigApiKey(): string {
   }
 }
 
-const API_KEY = process.env.WEB2MD_API_KEY || readConfigApiKey()
+let API_KEY = process.env.WEB2MD_API_KEY || readConfigApiKey()
 
 if (!API_KEY) {
-  console.error('Warning: no API key found. Server will start but tool calls will fail. Set WEB2MD_API_KEY, or run: npx web2md-cli login')
+  // OAuth 自动登录(2026-09-05):无凭证时不再只是报错等死 —— 启动即发起
+  // 浏览器 OAuth(loopback+PKCE+品牌 consent 页),成功后热更新 key。
+  // 体验对齐 `gh auth login`。可用 WEB2MD_OAUTH_AUTOLOGIN=0 关闭(CI 等场景)。
+  if (process.env.WEB2MD_OAUTH_AUTOLOGIN !== '0') {
+    console.error('No credentials found — starting browser sign-in (set WEB2MD_OAUTH_AUTOLOGIN=0 to disable)…')
+    import('./oauth.js')
+      .then(({ oauthLogin }) => oauthLogin())
+      .then((key) => { API_KEY = key })
+      .catch((e) => console.error('Sign-in failed:', e instanceof Error ? e.message : e, '\nRun: npx web2md-cli login'))
+  } else {
+    console.error('Warning: no API key found. Set WEB2MD_API_KEY, or run: npx web2md-cli login')
+  }
 }
 
-const authHeaders = {
+// key 可能在启动后由 OAuth 流补上,所以用 getter 现取
+const authHeaders = () => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${API_KEY}`,
-}
+})
 
 /**
  * Read the real package version instead of hardcoding it — a stale serverInfo
@@ -72,7 +84,7 @@ server.tool(
   async ({ url, includeImages, includeLinks }) => {
     const resp = await fetch(`${API_BASE}/v1/convert`, {
       method: 'POST',
-      headers: authHeaders,
+      headers: authHeaders(),
       body: JSON.stringify({
         url,
         options: { includeImages: includeImages ?? true, includeLinks: includeLinks ?? true },
@@ -99,6 +111,52 @@ server.tool(
   }
 )
 
+// ── convert_file(2026-09-05):本地文件 → Markdown。
+//    补齐 Agent 生态的能力缺口(convert_url 只吃 URL)。底层用 Firecrawl anydoc
+//    的 napi 绑定(Rust,毫秒级,表格/列表/脚注保真)—— 本地 MCP 跑在用户机器
+//    上,平台二进制天然可用。anydoc 是 optionalDependency,装不上时工具给出
+//    可操作的提示而不是崩溃。PDF 需 anydoc 内建能力,扫描件它读不了(可后续
+//    接 Firecrawl Parse OCR)。
+server.tool(
+  'convert_file',
+  'Convert a local document file to clean Markdown. Supports Word (.docx/.doc), PowerPoint (.pptx/.ppt), Excel (.xlsx/.xls), OpenDocument (.odt/.ods/.odp), RTF, EPUB, CSV, and PDF. Tables, headings, lists and footnotes are preserved. Fast, fully local — the file never leaves the machine.',
+  {
+    path: z.string().describe('Absolute path to the document file on the local filesystem'),
+  },
+  async ({ path: filePath }) => {
+    const err = (t: string) => ({ content: [{ type: 'text' as const, text: t }] })
+    let anydoc: { toMarkdown: (path: string) => Promise<string> }
+    try {
+      anydoc = await import('@firecrawl/anydoc')
+    } catch {
+      return err(
+        'The document converter is not installed on this machine. Install it with:\n  npm i -g @firecrawl/anydoc\nthen retry. (It ships prebuilt binaries for macOS/Linux/Windows.)'
+      )
+    }
+    const nodePath = await import('node:path')
+    const { existsSync } = await import('node:fs')
+    if (!existsSync(filePath)) {
+      return err(`File not found: ${filePath}. Use an absolute path to an existing file.`)
+    }
+    const ext = nodePath.extname(filePath).slice(1).toLowerCase()
+    try {
+      const md = await anydoc.toMarkdown(filePath)
+      const name = nodePath.basename(filePath)
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `# ${name}\n\n**Source:** ${filePath}\n**Type:** ${ext.toUpperCase()}\n\n---\n\n${md}`,
+          },
+        ],
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return err(`Conversion failed for ${filePath}: ${msg}. Scanned PDFs need OCR (not yet supported locally).`)
+    }
+  }
+)
+
 server.tool(
   'semantic_search',
   '[deprecated: use search_library/get_library_items] Search your saved conversions using natural language. Works across languages.',
@@ -108,7 +166,7 @@ server.tool(
   },
   async ({ query, limit }) => {
     const params = new URLSearchParams({ q: query, limit: String(limit || 5) })
-    const resp = await fetch(`${API_BASE}/search?${params}`, { headers: authHeaders })
+    const resp = await fetch(`${API_BASE}/search?${params}`, { headers: authHeaders() })
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ error: resp.statusText }))
@@ -135,7 +193,7 @@ server.tool(
     id: z.string().describe('The conversion ID'),
   },
   async ({ id }) => {
-    const resp = await fetch(`${API_BASE}/history/${id}`, { headers: authHeaders })
+    const resp = await fetch(`${API_BASE}/history/${id}`, { headers: authHeaders() })
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ error: resp.statusText }))
@@ -171,7 +229,7 @@ server.tool(
       // Convert HTML → Markdown via the API (reuse server-side converter)
       const resp = await fetch(`${API_BASE}/v1/convert`, {
         method: 'POST',
-        headers: authHeaders,
+        headers: authHeaders(),
         body: JSON.stringify({ html, url, options: { includeImages: true, includeLinks: true } }),
       })
 
@@ -363,7 +421,7 @@ interface Skill {
 
 async function fetchSkills(): Promise<Skill[]> {
   if (!API_KEY) throw new Error('WEB2MD_API_KEY is not set')
-  const resp = await fetch(`${API_BASE}/skills`, { headers: authHeaders })
+  const resp = await fetch(`${API_BASE}/skills`, { headers: authHeaders() })
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: resp.statusText }))
     throw new Error(err.error || `API error ${resp.status}`)
