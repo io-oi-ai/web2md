@@ -81,7 +81,15 @@ const server = new McpServer({
 
 server.tool(
   'convert_url',
-  'Convert a webpage URL to clean Markdown. Returns the Markdown content and metadata (title, word count, reading time).',
+  // 2026-11-05:Glama TDQS 两次给 Disambiguation / Naming Consistency 2/5,
+  // 原话是 convert_url / bridge_convert_url / agent_convert 三者"重叠明显,
+  // agent 很难知道该用哪个"。三条描述原本都写着 "Reddit / JS-rendered /
+  // login-protected",只在传输方式上有别 —— 而传输方式是实现细节,不是选择依据。
+  // 改法:每条开头先写**什么时候用**,再写代价和前置条件,让 agent 能按
+  // "这个 URL 需不需要我的登录态" 一步判断。排序也构成一条决策链:
+  //   convert_url(先试这个)→ 失败/需登录 → agent_convert(静默)
+  //   → 没装 native host → bridge_convert_url(会弹标签页)
+  'Convert a public webpage to clean Markdown. START HERE for any URL — it needs no browser, no extension, and no setup. Returns Markdown plus metadata (title, word count, reading time). If the page needs your login session or renders only after JavaScript runs (Reddit, X, paywalled articles, internal dashboards), this returns a login wall or an empty shell — switch to agent_convert in that case.',
   {
     url: z.string().url().describe('The URL of the webpage to convert'),
     includeImages: z.boolean().optional().describe('Include image references (default: true)'),
@@ -220,7 +228,7 @@ server.tool(
 
 server.tool(
   'bridge_convert_url',
-  'Convert a URL using your Chrome extension — required for Reddit, JS-rendered sites, or login-protected pages. The Web2MD extension must be installed and running in Chrome. Auto-discovers your extension ID via your API key.',
+  'FALLBACK for agent_convert when the native host is not installed. Same capability — reads the page through the user\'s signed-in Chrome — but it works by opening a browser tab, so it is visible and takes focus. Prefer agent_convert whenever the native host is available; use this one if agent_convert reports the host is missing, or on a machine where you cannot install it. Needs only the Web2MD extension installed and signed in; the extension is found automatically via the API key.',
   {
     url: z.string().url().describe('The URL to convert (Reddit, paywalled, JS-rendered, etc.)'),
     extensionId: z.string().optional().describe('Override extension ID (auto-discovered if omitted)'),
@@ -341,7 +349,7 @@ function agentRequest(msg: { id: string; type: string; [k: string]: unknown }): 
 
 server.tool(
   'agent_convert',
-  'Convert a URL using the Chrome extension via native messaging. Best for Reddit, login-protected pages, and JS-rendered sites. Requires: Chrome running + Web2MD extension + native host installed.',
+  'Convert one URL through the user\'s own signed-in Chrome, reading the page exactly as they see it. USE THIS when convert_url hits a login wall or returns an empty shell — Reddit, X, paywalled articles, internal wikis, dashboards. Runs silently in the background over a local connection; it does not open or steal focus from any tab. Requires Chrome running with the Web2MD extension and the native host installed (npx -p web2md-mcp-server web2md-mcp-setup). For several URLs at once use agent_batch_convert; if the native host is not installed use bridge_convert_url.',
   {
     url: z.string().url().describe('The URL to convert'),
     skill: z.string().optional().describe('Skill name or id to apply — its body is returned alongside the markdown for you to follow'),
@@ -386,7 +394,7 @@ server.tool(
 
 server.tool(
   'agent_batch_convert',
-  'Batch convert multiple URLs using the Chrome extension via native messaging. Ideal for converting many Reddit threads or JS-rendered pages. URLs are processed sequentially. Requires: Chrome running + Web2MD extension + native host installed.',
+  'The multi-URL form of agent_convert: up to 50 URLs in one call, each read through the user\'s signed-in Chrome. USE THIS instead of calling agent_convert in a loop — one call, one round trip, and each result carries its own token count. URLs are processed one after another, so a long list takes a while. Same requirements as agent_convert (Chrome + extension + native host).',
   {
     urls: z.array(z.string().url()).min(1).max(50).describe('Array of URLs to convert (max 50)'),
   },

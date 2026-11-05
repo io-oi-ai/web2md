@@ -1,6 +1,6 @@
 {
   "name": "web2md-mcp-server",
-  "version": "0.14.1",
+  "version": "0.14.3",
   "mcpName": "org.web2md/web2md",
   "description": "MCP Server for Web2MD — convert URLs to Markdown from Claude Desktop, Cursor, etc.",
   "type": "commonjs",
