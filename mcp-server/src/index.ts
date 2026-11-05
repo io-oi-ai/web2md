@@ -59,7 +59,13 @@ function packageVersion(): string {
     const raw = readFileSync(join(base, '..', 'package.json'), 'utf-8')
     const pkg = JSON.parse(raw) as { version?: unknown; name?: unknown }
     // Guard against picking up an unrelated package.json if the layout shifts.
-    if (pkg.name === 'web2md-mcp-server' && typeof pkg.version === 'string') {
+    // ⚠ Two package names ship this same server: `web2md-mcp-server` on npm and
+    // `web2md-mcp` in the standalone open-source repo (io-oi-ai/web2md-mcp, the
+    // one Glama indexes). Checking only the npm name made the mirrored build
+    // report serverInfo 0.0.0 — which is exactly the stale-version confusion
+    // this function exists to prevent.
+    const KNOWN = ['web2md-mcp-server', 'web2md-mcp']
+    if (typeof pkg.name === 'string' && KNOWN.includes(pkg.name) && typeof pkg.version === 'string') {
       return pkg.version
     }
   } catch {
